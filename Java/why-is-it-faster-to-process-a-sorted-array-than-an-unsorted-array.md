@@ -60,7 +60,7 @@ int main()
 - 没有 `std::sort(data, data + arraySize);` 时，代码运行时间为 11.54s。
 - 排过序以后代码运行时间是 1.93s。
 
-一开始，我觉得这可能跟语言或编程语言有关，所以我把这段代码改成了 Java。
+一开始，我觉得这可能跟语言或编译器有关，所以我把这段代码改成了 Java。
 
 ```java
 import java.util.Arrays;
@@ -195,7 +195,7 @@ branch =   T,   T,   N,   T,   T,   T,   T,  N,   T,   N,   N,   T,   T,   T,   
 
 **我们应该怎么办？**
 
-如果编译器无法将这种分支优化成去条件化(conditional move: 条件语句通常会翻译成 jl 等这种汇编代码，如果能将条件语句优化成顺序执行没有跳转的指令序列，这就叫去条件化，更详细的说明请参考 [Conditioncal Move](https://www.cs.tufts.edu/comp/40/readings/amd-cmovcc.pdf))指令，如果你愿意为性能牺牲一些可读性的话，可以尝试一些编码技巧。
+如果编译器无法将这种分支优化成条件转移指令(conditional move instruction（参考 CSAPP 2e 3.6.6 的翻译），更详细的说明请参考 [Conditioncal Move](https://www.cs.tufts.edu/comp/40/readings/amd-cmovcc.pdf))，如果你愿意为性能牺牲一些可读性的话，可以尝试一些其他的编码技巧。
 
 替换：
 
@@ -261,13 +261,13 @@ Update：
 
 ### 答案二
 
-在 C++ 中我们可以通过使用以下替换方案来去条件化。
+在 C++ 中我们可以通过使用以下替换方案来使用条件转移指令。
 
 ```c++
 sum += data[c] >= 128 ? data[c] : 0;
 ```
 
-**原因是 `... ? ... ? ...` 语句在编译器编译时会直接生成去条件化指令**
+**原因是 `... ? ... ? ...` 语句在编译器编译时会直接生成条件转移指令**
 
 ```c++
 int max1(int a, int b) {
@@ -307,7 +307,7 @@ int max2(int a, int b) {
     movl    %esi, -8(%rbp)
     movl    -4(%rbp), %eax
     cmpl    %eax, -8(%rbp)
-    cmovge  -8(%rbp), %eax          ; cmovxx 去条件化
+    cmovge  -8(%rbp), %eax          ; cmovxx 条件转移指令
     leave
     ret
 ```
@@ -327,7 +327,7 @@ public int withBranch(int a, int b) {
     }
 }
 
-public int conditionalRemove(int a, int b) {
+public int conditionalMove(int a, int b) {
     return a > b ? a : b;
 }
 ```
@@ -356,7 +356,7 @@ public class me.rainstorm.branch.WithBranch {
        7: iload_2
        8: ireturn
 
-  public int conditionalRemove(int, int);      // ...?...?...;
+  public int conditionalMove(int, int);      // ...?...?...;
     Code:
        0: iload_1
        1: iload_2
@@ -370,8 +370,13 @@ public class me.rainstorm.branch.WithBranch {
 
 我们可以从字节码中看到，两种方式使用的都是 `if_icmple` 指令。他们在这一层次上是相同的，那么我们基本可以确定**机器码级别**也是一样的。
 
+PS: 有兴趣的话可以使用 `64位 Linux 版本的 Java9 JDK` 中自带的 AOT 编译器 `jaotc` 生成机器码，对比看看是否一致。
+- `注意：该工具目前只有这一个 JDK 版本中有，其他版本估计会在 Java10 中发布`
+
 ## 最佳实践
 
 通过其他方法，如位操作将执行流程从分支执行转换为顺序执行。但是这种做法会牺牲一定的可读性，应该酌情使用。
 
 ## 参考
+
+- 参考的其他链接忘记记录了，下不为例！
