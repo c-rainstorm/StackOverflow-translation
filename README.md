@@ -13,7 +13,8 @@
 ```
 .
 |-- Java
-|   `-- why-is-it-faster-to-process-a-sorted-array-than-an-unsorted-array.md
+|   |-- why-is-it-faster-to-process-a-sorted-array-than-an-unsorted-array.md
+|   `-- what-is-a-nullpointerexception-and-how-do-i-fix-it.md
 `-- README.md
 ```
 
